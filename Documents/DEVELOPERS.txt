@@ -1,0 +1,375 @@
+Part1
+===========================================================================================================================
+---------------------------------------------------------------------------------------------------------------------------
+===========================================================================================================================
+There are two source files that are necessary for the program to run correctly: parser.c and part1.c
+
+        part1.c is a simple program with a main method and the bare minimum required to start the parser and get back information about it.
+        Author: cata
+
+parser.c has all of the methods that parse the file.
+Important things in parser.c
+    Cards are stored as a single integer from 0 to 51, each number corresponding to a unique card
+    
+    Important methods (parser.h):
+        parse(FILE *readFile, unsigned *line, char *turn, char *limit, char *cards, char *covered, char *stock, char *waste); Authors - magnus and cata
+            parse is the most important method, because it is the one intended to be called from other functions. It has all the arguments passed in to it which other methods in this file use, so they will be outlined only here.
+            readFile is a FILE* to the file to read from.
+            line is a pointer to an integer storing what line we are on.
+            turn is a pointer to a char(a number) that stores the limit, defined in the rules section.
+            limit is similar to turn, and is -1 if UNLIMITED is read.
+            cards is an array with 52 entries, each a number counting the number of times a given card is found by the input.
+            covered is a pointer to a number counting the number of covered cards found.
+            stock is a pointer to a number counting the number of cards found in the stock.
+
+        parseWhitespace(); Author - magnus
+            runs through the input file through all whitespace and comments, until a non-whitespace character is found, leaving that as the next character.
+        parseRules(); Author - magnus
+            parses the rules section of the file
+        parseFoundations(); Author - magnus
+            parses the foundations section of the file
+        parseFoundationPile(); Author - magnus
+            a single card from the input file, and does all the work behind the scenes to make it work
+        parseTableau(); Author - magnus
+            parses the tableau section of the input file
+        parseTableauLine(); Author - magnus
+            parses a single line from the input file on the tableau
+        parseStock(); Author - cata
+            parses the stock
+        parseStockPile(); Author - cata
+            parses the section of the stock that contains cards
+        parseMoves(); Author - cata
+            parse the section looking for the word Moves: and breaks if confirmed exists in file
+        checkCards(); Author - cata
+            confirms that all the cards have been valid and found, with no duplicates or missing cards    
+    
+    Helper methods
+        assertNextWord(); Author - magnus
+            takes the string word as an argument and returns 1 if the next characters from the input file match it and 0 otherwise
+        getNextInt(); Author - magnus
+            reads an integer from the input file and returns it, throwing an error if it is not an integer
+        complain(); author - magnus
+            takes the line number and an error message and prints the error to stderr, then aborts.
+        printCards(); author - magnus
+            a method used for debugging
+        
+    Tiny methods
+        getValue(); Author - magnus, takes a card (number between 0-51) and returns its rank between 0-12
+        getSuit(); Author - magnus, takes a card and returns its suit between 0-3
+        fillFoundation(); author-magnus, takes a card and notes in the array that it and all cards of lesser rank and similar suit have been seen
+        addCard(); Author - magnus, takes a card and notes in the array that it has been seen
+        formatRankToNum(); Author - magnus, takes a character rank as seen input file and turns it to a rank from 0 to 12.
+        formatSuitToNum(); Author - magnus, takes a character rank as seen in input file and turns it to a rank from 0 to 3.
+        formatNumToRank(); author - magnus, takes a number from 0 to 12 and returns the char as formatted in the input file for that rank.
+        formatNumToSuit(); author - magnus, takes a number from 0 to 3 and returns the char as formatted in the input file for that suit.
+
+
+Part2
+===========================================================================================================================
+---------------------------------------------------------------------------------------------------------------------------
+===========================================================================================================================
+For the program to work correctly parser.c Part2.c moves.c tinyHelper.c smallHelper.c thiccHelper.c and their respective header files are needed
+For part2 to run correctly everything from part1 is used and has been modified to fit and make moves.
+
+	Part2.c program used to check for and read file from standard input or command line arguments. Checks for new switch cases that may alter the way the file is read.
+	Author - cata
+
+Important Methods Updated:
+	Major changes to parse.c:
+		parseCheck(FILE *readFile, unsigned *line, char *turn, char *limit, char *covered, char *stock, char *waste, char *wasteStock, char *foundation, char *tableau); Author - cata & magnus
+			Similar to Part1 parseCheck checks the file, now includes additional parameters:
+				wasteStock: a pointer to store the values of the current cards in the waste and stock
+				foundation: a pointer to store the current cards in the foundation
+				tableau: a pointer to store the current cards in the tableau
+				Above three aren't primarily needed for the check but must be included for other parser methods.
+
+		parseAdvance(FILE *readFile, unsigned *line, char *turn, char *limit, char *covered, char *stock, char *waste, char *wasteStock, char *foundation, char *tableau); Author - cata & magnus
+			Similar to parseCheck but used to advance the moves in Part2
+				wasteStock: pointer is used in new method parseAdvanced moves to pass waste and stock cards
+				foundation: pointer is used in new method parseAdvanced moves to pass current foundation status
+				tableau: pointer is used in new method parseAdvanced moves to pass current tableau status
+				These three pointers are mainly needed to be used to supply moves with information to change and update
+				Contains parsAdvancedMoves instead of parseMoves
+
+		parseAdvancedMoves(FILE *readFile, unsigned *line, char *wasteStock, char *foundations, char *tableau, char *limit, char *turn, char isExchange, int maxRead, FILE* outfile); Author - magnus
+			Main new method used to pass params into moves to read and execute the different legal moves in the solitaire game
+			readFile: pointer to current file
+			line: pointer to current line number
+			wasteStock: pointer to array of cards in the waste and stock
+			foundations: pointer to array of cards in the foundations
+			tableau: pointer to array of cards currently present in the tableau
+			limit: pointer to Rules limit - determines how many times the stock can be reset
+			turn: pointer to Rules turn - determines how many cards to flip from the stock (1 or 3) for the waste to hold
+			isExchange: char used to determine what style of output to print
+			maxRead: determines how many moves will be read and completed from the file (-1 signifies infinity)
+			outfile: pointer to the file that will receive the printed information from a successful read of the file
+
+		parseSingleMove (FILE* readFile, unsigned* line, char *wasteStock, char *tableau, char *foundations, char *limit, char *turn, char isExchange, unsigned currentMove, FILE* outfile); Author - magnus
+			Same params as parseAdvancedMoves
+			Reads a single move one at a time and processes move type until error occurs or maxRead has been satisfied:
+				moveWasteToFoundation
+				moveWasteToTableau
+				moveTableauToFoundation
+				moveTableauColumn
+				nextStockCard
+				resetStockPile
+
+		parseNextIsMoveStart(FILE* readFile) && parseNextIsMoveEnd(FILE* readFILE) Author - magnus
+			Both methods above are used to find the start and stopping point of move
+
+	moves.c Author - cata
+		moveWasteToFoundation(); Author - cata
+			Checks to see if a card can be moved from the waste to the foundation
+			If move is successful removes the current top of the waste
+		moveWasteToTableau(); Author - cata
+			Checks to see if waste card can be moved from the waste to the corresponding row of the tableau
+			If card is a king and an empty column is available succeeds and removes top waste card otherwise fails
+			If card in waste is one rank lower and different suit than another card in the tableau succeeds and removes top waste card otherwise fails
+		moveTableauToFoundation(); Author - magnus
+			Checks if card in tableau is movable to foundation
+			If its a rank above and correct suit it succeeds else fails
+		moveTableauColumn(); Author - magnus
+			Checks if the cards in the current column can be moved from a column to another column
+			Iterates till it finds a possible match that can be moved
+			If successful moves a single/multiple cards to new column otherwise fails
+		nextStockCard(); Author - cata
+			Gets the next card from the stock based on turning over 1 or 3 cards (Rules defines this)
+			Fails if no cards are available in the stock
+		resetStockPile(); Author - cata
+			If no more cards are available in the stock and cards exist in the waste then resets the stock N times (N times is based on limit of rules)
+		moveError() Author - magnus
+			If a move that is faulty is detected throws an error indicating which move is invalid and prints the current state of the board prior to move
+
+	helper methods
+		Major changes to helper methods
+		Three new categories tiny small and thicc
+
+		tinyHelper.c: Author - cata
+			addCard(); Author - magnus
+				adds the current card to the card array
+            complain(); Author - magnus
+                if something isn't right about the current operation print error and exit
+            getValue(); Author - magnus
+                gets the value of the card from (0-51)/13 (Results in card 0-12)
+            getSuit(); Author - magnus
+                gets the suit of the card from (0-51)%13 (Results in 0-3)
+            fillFoundation(); Author - magnus
+                puts cards into the foundation in ascending order
+            formatRankToNum(); Author - magnus
+                changes the current Rank to num (0-12 -> 0-51)
+            formatSuitToNum(char); Author - magnus
+                changes the suit to num ('c'/'d'/'h'/'s' -> 0-3)
+            formatNumToRank(char); Author - magnus
+                changes the num to rank (0-51 -> 0-12 corresponding to a card, ex: A = 0)
+            formatNumToSuit(char); Author - magnus
+                changes the num to a suit (0-3 -> 'c'/'d'/'h'/'s')
+            fprintCard(char card, FILE* outfile, char *end); Author - magnus
+                fprintf the card to output file based on normal moves output file
+            fprintCardX(char card, FILE* outfile, char *end); Author - cata
+                fprintf the card to output file based on special -x switch
+            getBeginningOfStock(char *wasteStock); Author - cata
+                finds the -1 that precedes the stock
+            getBottomColumn(char *tableau, char column); Author - magnus
+                gets the value on the bottom of the column
+            removeTopWaste(char *wasteStock); Author - magnus
+                removes the current top waste card from the waste
+            setBottomColumn(char *tableau, char column, char card); Author - magnus
+                assigns a new card to the bottom of the column
+            show_array(char*,int,char*); Author - magnus
+                prints out different arrays to see what values are inside
+            swapCard(char *, unsigned num); Author - cata
+                changes the order of the values in the array
+
+        smallHelper.c Author - cata
+            Same as part1 helper methods
+            assertNextWord(); Author - magnus
+            getNextInt(); Author - magnus
+            getNextCard(); Author - magnus
+            printCards(); Author - magnus
+
+        thiccHelper.c Author - cata
+            checkCards(); Author - cata
+                validates all the cards are present from the file and no missing or duplicate cards exist
+            currentlyWorksPrintingTableauArrayButNOTWhatIWant(); Author - cata
+                prints the tableau sides ways instead of the correctly developed tableauPrinting()
+            tableauPrinting(); Author - magnus
+                prints the tableau in columns 1-7
+            printConfiguration(); Author = magnus
+                prints the current state of the game
+
+Part3
+============================================================================================================================
+ --------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
+Old files for parts 2 and 1:
+        moves.c        - responsible for taking a given gamestate and turning it into a new one by moving cards around.
+                         Added methods to allow looping over all possible moves. Added methods to test if a move is possible
+                         as well as made the previous moving functions update the numStock, numWaste, and numCovered cards.
+        parser.c       - responsible for all the parsing of all data from the input file. No changes.
+        tinyHelper.c   - responsible for simple operations on cards. Widely used across the entire program. No changes.
+        smallHelper.c  - responsible for simplifying some common tasks in parser.c. No changes.
+        thiccHelper.c  - responsible for printing gamestates and a couple other needed functions. No changes.
+        Part1.c        - Creates an executable check which prints tableau, stock, and waste cards after parsing input file.
+        Part2.c        - Creates an executable advance which does everything Part1 does and then parses a MOVES section.
+                         Moved print statements from parser and moves methods to Part1 and Part2 to better allow for
+                         re-using of functions. Otherwise, same exact functionality.
+New files for part 3:
+        Part3.c        - Main method which does everything required to go from a parsed input state to a winning sequence of
+                         moves being printed out. Has internal methods to print diagnostic information and a main method
+                         which is the core of this release of the project.
+        Simplicity.c/h - It was not feasible to continue with our previous method of storing and passing in singular arrays
+                         to perform all tasks. Thus, it was deemed neccessary to store everything pertaining to the program
+                         in a single struct. When beginning to implement Part3, this was further split up into a gamestate
+                         struct and a (mostly) global configuration struct for parsing and printing to files.
+        Datastructures/
+        bfHashtable.c  - Stores game configurations added to it (that it assumes ownership of), and hashes them for 
+                         efficient storage without duplicates. Necessary for the implementation of Part3.c
+        linkedQueue.c  - Stores a queue of pointers (that it does not own) by utilizing a linked list. Necessary for the
+                         implementation of Part3.c. Could probably be replaced by a stack for a depth first search as well.
+        charStack.c    - Stores a stack of bytes by using an array of variable size. Necessary to print the moves to reach a
+                         winning state in Part3.c
+Extra stuff!
+        randState.c    - Creates a random gamestate and prints it's exchange format. 
+                         Can use -f FOUNDATIONS switch and -m MOVES switch to change how the gamestate is generated.
+                         Usage (7 April 2020) ./randstate (-m MOVES) (-f FOUNDATIONS) (-v)
+        cunit.c        - Tests if stdin exactly matches a given input file except for whitespace and prints an error if it
+                         does not. Useful for verifying test cases for past projects quickly and easily once they are work
+                         Usage (7 April 2020) ./testingFunc -args | ./cunit correctFile.txt
+
+        Description of solution:
+                Our method to find a winning sequence of moves is by using a breadth first search. We begin with the
+                gamestate parsed by Part2. Then, we add this state to two data structures - a queue and a hashtable. We
+                continue adding gamestates to both data structures for the rest of the algorithm.
+                    - The hashtable is to ensure quick runtime. It also is responsible for storing some extra information
+                      about a gamestate; how deep it is in the search, and where that gamestate was generated from so that
+                      we can follow that chain back and create the winning sequence.
+                    - The queue is used to create a breadth first search. Whenever a gamestate needs to be added, it is
+                      first hashed to ensure it is not a duplicate and to add the information described above. Then, if it
+                      was not a duplicate, it is also added to the queue. Gamestates are then taken off the queue to be
+                      processed. (Hashtable nodes are the actual data being stored in the queue.)
+                After adding the initial gamestate to the queue, we iterate through the queue, taking elements one at a time
+                After an element is dequeued, the following is done to it:
+                    Find all legal moves that can be done from the dequeued gamestate. For each one,
+                        Copy the gamestate
+                        Do the move on it, since we know it is legal
+                        Attempt to add the state (with move) to the hashtable
+                        If we could add it (it is not a duplicate) then check if it is a winning state
+                        If it is a winning state, then we are done so exit the loop.
+                        If it is not a winning state but it was not a duplicate either, add it to the queue
+                        If it is a duplicate, free the copied gamestate and move on.
+                    We also update a clock so we can print verbosely every so often when it is needed.
+                Then the element is discarded (still in the hashtable so we cannot free it!) and the next is dequeued.
+                Now we either have a winning gamestate or we do not.
+                    If we don't, then there isn't much left to do except print that it wasn't possible and exit.
+                        The last pointer to the hashtable is also stored so we can assess some information about why, use -v
+                    If we do, then we need to print that it was found. We also need to print the move sequence that got us
+                    there. To that end, we do the following.
+                    From the winning state, we look at the move that produced it and add that move (moves are stored as
+                    bytes from 1-59) to a stack of characters. Then, look at the gamestate that produced the winning move,
+                    adding its move to the stack. Continue like this until reaching the first gamestate, that was parsed.
+                    Now, all the winning moves are on the stack and it is as simple as popping them off successively until
+                    the stack is empty.
+                The algorithm is complete, so we free the memory we were using (all 10 gigabytes) and the program ends.
+
+        Method descriptions and authors:
+            Part3.c:
+                Cata - main method (basically the most important part, does everything)
+                Cata . . . . . . . Parsing flags and input file
+                Cata . . . . . . . looping through the queue while it has elements and the search isn't done
+                Cata . . . . . . . looping through all potential moves for a single gamestate
+                Cata . . . . . . . looping through forced moves if there are any when given -f
+                Cata . . . . . . . adding new gamestates to the hashtable and queue
+                Cata . . . . . . . Printing correct output on either success or failure
+                Cata . . . . . . . Printing moves to win to stdout when winnable
+                Magnus - . . . . . Printing verbose debug info to stderr when running
+                Magnus - verboseSeconds, verboseMillion, verbosePrint methods (prints -v)
+                Magnus - getSafeFoundationMoves, isSafeFoundationMove methods (used for -f)
+            moves.c:
+                Magnus - canPerform$movetype$ (Copy paste code from moves.c original functions to test legality)
+                Magnus - canPerformMoveID, performMoveID, printExchangeMoveID (Allows a number to correspond to a move)
+            simplicity.c
+                Cata and Magnus - struct simplicity (store all data pertaining to one gamestate+parsing+everything in a struct)
+                Cata and Magnus . And change all method headers to use a struct simplicity instead of like 10 arguments
+                Magnus - split into struct gamestate and struct parserConfig
+                Magnus - copyGameState (glorified memcopy)
+                Magnus - initParserConfig (assigns default values to a parserConfig)
+            bfHashtable.c
+                Cata - init_table (starts a hashtable)
+                Cata - add_to_table (adds a struct gamestate to a hashtable)
+                Cata -   hash (hashes a gamestate)
+                Magnus . tried to fix hash function
+                Cata . . Actually fixed Magnus' horrible hash function
+                Cata - stateEquals (checks if 2 struct gamestates are equal)
+                Magnus - freeHashTable (loops over the table freeing it and its members)
+                Magnus - printSlotsOccupiedHashTable (copy of freeHashTable to print debug information)
+            linkedQueue.c
+                Magnus - initLinkedQueue destroyLinkedQueue (starts a queue, ends one)
+                Magnus - isEmptyQueue, itemsInQueue (returns information about a queue)
+                Magnus - enQueue (adds a pointer to a queue)
+                Magnus - deQueue (gets a pointer from the queue)
+            charStack.c
+                Magnus - initStack, destroyStack (creates a stack, destroys a stack)
+                Magnus - charsOnStack, charStackEmpty (returns information about a queue)
+                Magnus - charPush (pushes a char on to the stack)
+                Magnus - charPop  (gets a char off the stack)
+                Magnus - verifySize (internal method for stacks)
+
+Part 4 Solo Project
+============================================================================================================================
+ --------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
+Most new things are in display.c But heavily utilizes all original files/methods from p3,p2, and p1.
+
+New files for Part 4 @Author Cata
+	- display.c:    Main Method that does everything for drawing out and display the visuals needed to play the game.
+					Receives keyboard inputs to manipulate the cards on the screen to play a game of solitair.
+
+	Methods in display.c:
+		 struct params is a struct that was originally intended to house the gamestate, store the source and be
+		 utilized to manipulate and gather information. Decided against using it in the long run.
+
+		 printBlockColor(): . . . .  helper method to print certain color of blocks throughout the display.
+
+		 printWords():      . . . .  helper method to print words throughout the display.
+
+		 print Number():    . . . .  helper method to print numbers where needed in the display.
+
+		 printSuit():       . . . .  helper method used to print the current suit of the card on the front and back of
+		                             different cards.
+
+		 drawInstructions(): . . . . helper method that draws out different boxes and character text needed to understand the
+		                             the game setup and how to play.
+
+		 informationText():  . . . . helper method used to display the text throught the display for instructions
+		                             and what they are. For example [U] *information text:* undoes a move, etc.
+
+		  drawBlankFoundationPile()  helper method used to draw the foundation pile when no cards of that suit are present
+
+		 drawCard()            . . . A big helper method that allowed me to quickly draw each card in the deck for each location
+
+		 drawFoundations()     . . . helper method that draws the foundation of cards that are presently there utilizing drawCard()
+
+		 drawWasteStock()      . . . helper method used to draw the area of the waste and stock cards for displaying
+
+		 drawTableau()         . . . helper method used to draw out the tableau from the current gamestate
+
+		 refreshScreen()       . . . helper method used to clear and redraw the gamestate after initially starting and
+		                             while currently making moves. If moves are successful will redraw the gamestate to
+		                             provide up to date information of the current layout on the board;
+
+		 handleKeyboardInput() . . . helper method to handle user input. Takes a source and dest and checks to see if the move is possible
+		                             if so executes the move and changes the gamestate.
+		                                    Detects:    Shift+q to quit
+		                                                Shift+r to restart the game over from beginning
+		                                                Shift+u to undo last move made
+		                                                e to get the next card in stock
+		                                                r to reset the stock
+		                                                1-7 to represent the columns from the tableau
+
+		 resetGame             . . . helper method to update different gamestates to either restart from the beginning or to keep
+		                             track of the previous move in case user wants to reset the move.
+
+		  Finally main method that executes and draws the game board after reading from the file or a random file generated from a seed
+		  and initializes the game.
+
+

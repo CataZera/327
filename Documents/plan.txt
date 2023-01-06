@@ -1,0 +1,57 @@
+DONE Create a hashtable of struct hashtableNode
+DONE Create a queue of struct hashtableNode*
+DONE Create a method to deep copy struct simplicity* off the heap
+DONE Create a stack of char
+
+DONE make the move functions update numCovered, numStock, numWaste
+DONE make a function that takes a move id and a gamestate and returns if it is a legal move
+DONE make a function that takes a move id and a gamestate and performs the correct move on it.
+DONE make a function that takes a move id and a file and prints the exchange format to do that move
+
+struct hashtableNode {
+	struct simplicity gamestate;
+	struct hashtableNode* from;	//gamestate of order 1 less than this one
+	char moveID;			//move which, performed to from->gamestate, will produce gamestate.
+	unsigned long order;		//number of moves needed to get from the parsed gamestate to this one.
+};
+
+DONE Algorithm:
+
+Parse a struct simplicity* from the input file.
+/*
+struct simplicity* root = malloc(sizeof(struct simplicity));
+parseCheck(root);
+*/
+Add it to the queue
+winningPointer=0
+While there is at least one thing on the queue and !winningPointer
+	For each legal move produced from the gamestate made from the first thing on the queue
+		Deep copy the struct simplicity* stored in the hashtableNode
+		Perform the move
+		Fill in the rest of hashtableNode information
+		If winning, winningPointer=hashtableNode and break out
+		Add that struct to the queue if order < maxNumberOfMoves
+
+if (!winningPointer)
+	print that there is no way to do it
+else
+	tempPointer = winningPointer
+	while (tempPointer->moveID)
+		Add tempPointer->moveID to the stack
+	print that there is a way to do it
+	For each thing on the stack
+		print that move
+
+Mini step:
+Add it to the end of the queue means look it up in the hashtable. If it is there, do nothing. Otherwise, add it to the hashtable and put a pointer to the hashtable node onto the queue.
+
+TO DO:
+ -f switch
+ test the hashtable hashing and stateEquals functions thoroughly
+ test each type of move - w->f, w->2, 2->f, 2->7, 5->1, ., r - just to make sure no lingering bugs
+ upgrade the hashtable hashing and stateEquals functions. 
+   I am now convinced those are the two things we can do to speed this up, as they are the most time-consuming 
+      (looping through hashnodes - unavoidable but good hash function = less, 
+      and testing if it is equal to, which must be done every time it loops through that list)
+ make the random state have a switch to perform a random number of random moves on the set up so we can run winnable on it
+ do some inline functions to maybe speed some tiny methods up

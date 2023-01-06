@@ -1,0 +1,10 @@
+RULES: turn 1 unlimited FOUNDATIONS: Jc Qd Qh Ks
+TABLEAU:
+|
+| Kc Qh Jc
+|
+| Kh Qs
+| Kd Qc
+|
+|
+STOCK: | MOVES:

@@ -1,0 +1,15 @@
+lib needed lncurses, and lncursses
+
+gcc -lncursesw (only needed in files that uses. Ex one file contains the entire p4.
+
+locale.h used to print unit code
+
+game loop(ncurses):
+	wait until detects input
+	call method to handle the input : handleInput();
+
+
+detecting mouse input
+
+
+
